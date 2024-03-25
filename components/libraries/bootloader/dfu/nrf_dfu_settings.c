@@ -339,6 +339,17 @@ static ret_code_t settings_write(void *p_dst,
     ASSERT(p_dfu_settings_buffer != NULL);
     memcpy(p_dfu_settings_buffer, p_src, sizeof(nrf_dfu_settings_t));
 
+    // bank_0
+    NRF_LOG_INFO("bank_0.image_size: %d", p_dfu_settings_buffer->bank_0.image_size);
+    NRF_LOG_INFO("bank_0.image_crc: 0x%08x", p_dfu_settings_buffer->bank_0.image_crc);
+    NRF_LOG_INFO("bank_0.image_type: %d", p_dfu_settings_buffer->bank_0.bank_code);
+
+    // bank_1
+    NRF_LOG_INFO("bank_1.image_size: %d", p_dfu_settings_buffer->bank_1.image_size);
+    NRF_LOG_INFO("bank_1.image_crc: 0x%08x", p_dfu_settings_buffer->bank_1.image_crc);
+    NRF_LOG_INFO("bank_1.image_type: %d", p_dfu_settings_buffer->bank_1.bank_code);
+
+#if 0
     // 打印p_dfu_settings_buffer
     NRF_LOG_INFO("p_dfu_settings_buffer: ");
     NRF_LOG_INFO("crc: 0x%08x", p_dfu_settings_buffer->crc);
@@ -350,15 +361,7 @@ static ret_code_t settings_write(void *p_dst,
     NRF_LOG_INFO("bank_layout: 0x%08x", p_dfu_settings_buffer->bank_layout);
     NRF_LOG_INFO("bank_current: 0x%08x", p_dfu_settings_buffer->bank_current);
 
-    // bank_0
-    NRF_LOG_INFO("bank_0.image_size: %d", p_dfu_settings_buffer->bank_0.image_size);
-    NRF_LOG_INFO("bank_0.image_crc: 0x%08x", p_dfu_settings_buffer->bank_0.image_crc);
-    NRF_LOG_INFO("bank_0.image_type: %d", p_dfu_settings_buffer->bank_0.bank_code);
 
-    // bank_1
-    NRF_LOG_INFO("bank_1.image_size: %d", p_dfu_settings_buffer->bank_1.image_size);
-    NRF_LOG_INFO("bank_1.image_crc: 0x%08x", p_dfu_settings_buffer->bank_1.image_crc);
-    NRF_LOG_INFO("bank_1.image_type: %d", p_dfu_settings_buffer->bank_1.bank_code);
 
     // write_offset
     NRF_LOG_INFO("write_offset: %d", p_dfu_settings_buffer->write_offset);
@@ -366,7 +369,7 @@ static ret_code_t settings_write(void *p_dst,
     // sd_size
     NRF_LOG_INFO("sd_size: %d", p_dfu_settings_buffer->sd_size);
 
-#if 0
+
     // progress command_size
     NRF_LOG_INFO("progress.command_size: %d", p_dfu_settings_buffer->progress.command_size);
     NRF_LOG_INFO("progress.command_offset: %d", p_dfu_settings_buffer->progress.command_offset);
@@ -383,7 +386,7 @@ static ret_code_t settings_write(void *p_dst,
     // firmware_image_offset_last
     NRF_LOG_INFO("progress.firmware_image_offset_last: %d", p_dfu_settings_buffer->progress.firmware_image_offset_last);
     NRF_LOG_INFO("progress.update_start_address: 0x%08x", p_dfu_settings_buffer->progress.update_start_address);
-#endif
+
 
     // enter_buttonless_dfu
     NRF_LOG_INFO("enter_buttonless_dfu: %d", p_dfu_settings_buffer->enter_buttonless_dfu);
@@ -406,11 +409,12 @@ static ret_code_t settings_write(void *p_dst,
     NRF_LOG_INFO("boot_validation_bootloader: %d", p_dfu_settings_buffer->boot_validation_bootloader.type);
     // boot_validation_t bytes
     // NRF_LOG_HEXDUMP_INFO(p_dfu_settings_buffer->boot_validation_bootloader.bytes, SETTINGS_BOOT_VALIDATION_SIZE);
+#endif
 
-    // uint32_t            crc;                          
-    // ble_gap_id_key_t    ble_id;                
-    // ble_gap_enc_key_t   enc_key;                              
-    // uint8_t             sys_serv_attr[SYSTEM_SERVICE_ATTR_LEN]; 
+    // uint32_t            crc;
+    // ble_gap_id_key_t    ble_id;
+    // ble_gap_enc_key_t   enc_key;
+    // uint8_t             sys_serv_attr[SYSTEM_SERVICE_ATTR_LEN];
     // peer_data
     // LOG_HEXDUMP_INFO(p_dfu_settings_buffer->peer_data, NRF_DFU_PEER_DATA_LEN);
     // NRF_LOG_INFO("peer_data: %s", p_dfu_settings_buffer->peer_data.crc);

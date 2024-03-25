@@ -43,13 +43,22 @@
 #include "nrf_assert.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Crypto library in bootloader case does not use dynamic allocation */
-#define NRF_CRYPTO_ALLOC(size) NULL; ASSERT(0)
-#define NRF_CRYPTO_ALLOC_ON_STACK(size) NULL; ASSERT(0)
+#define NRF_CRYPTO_ALLOC(size) \
+    NULL;                      \
+    ASSERT(0)
+#define NRF_CRYPTO_ALLOC_ON_STACK(size) \
+    NULL;                               \
+    ASSERT(0)
 #define NRF_CRYPTO_FREE(ptr) (void)ptr;
+
+    // void cpy_flash_to_ram(uint32_t src_addr, uint32_t *dst_addr, uint32_t size);
+    // void decrypt_hex(const uint8_t *p_data, uint8_t *decrypted);
+    void decrypt_hex_from_flash(const uint8_t *p_data);
 
 #ifdef __cplusplus
 }

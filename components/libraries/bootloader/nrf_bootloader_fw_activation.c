@@ -48,9 +48,7 @@
 #include "nrf_dfu_utils.h"
 #include "nrf_bootloader_wdt.h"
 
-
 static volatile bool m_flash_write_done;
-
 
 /**
  * @brief Function for copying image. Image is copied in chunks. Frequency of storing progress
@@ -83,13 +81,13 @@ static uint32_t image_copy(uint32_t dst_addr,
         ASSERT((dst_addr % CODE_PAGE_SIZE) == 0);
     }
 
-    uint32_t max_safe_progress_upd_step = (src_addr - dst_addr)/CODE_PAGE_SIZE;
+    uint32_t max_safe_progress_upd_step = (src_addr - dst_addr) / CODE_PAGE_SIZE;
     ASSERT(max_safe_progress_upd_step > 0);
 
     uint32_t ret_val = NRF_SUCCESS;
     uint32_t pages_left = CEIL_DIV(size, CODE_PAGE_SIZE);
 
-    //Firmware copying is time consuming operation thus watchdog handling is started
+    // Firmware copying is time consuming operation thus watchdog handling is started
     nrf_bootloader_wdt_init();
 
     progress_update_step = MIN(progress_update_step, max_safe_progress_upd_step);
@@ -117,22 +115,19 @@ static uint32_t image_copy(uint32_t dst_addr,
 
         // Flash one page
         NRF_LOG_DEBUG("Copying 0x%x to 0x%x, size: 0x%x", src_addr, dst_addr, bytes);
-        ret_val = nrf_dfu_flash_store(dst_addr,
-                                      (uint32_t *)src_addr,
-                                      ALIGN_NUM(sizeof(uint32_t), bytes),
-                                      NULL);
+        ret_val = nrf_dfu_flash_store(dst_addr, (uint32_t *)src_addr, ALIGN_NUM(sizeof(uint32_t), bytes), NULL);
         if (ret_val != NRF_SUCCESS)
         {
             return ret_val;
         }
 
-        pages_left  -= pages;
-        size        -= bytes;
-        dst_addr    += bytes;
-        src_addr    += bytes;
+        pages_left -= pages;
+        size -= bytes;
+        dst_addr += bytes;
+        src_addr += bytes;
         s_dfu_settings.write_offset += bytes;
 
-        //store progress in flash on every successful chunk write
+        // store progress in flash on every successful chunk write
         ret_val = nrf_dfu_settings_write_and_backup(NULL);
         if (ret_val != NRF_SUCCESS)
         {
@@ -155,10 +150,10 @@ static uint32_t image_copy(uint32_t dst_addr,
 static uint32_t app_activate(void)
 {
     // This function is only in use when new app is present in Bank 1
-    uint32_t const image_size  = s_dfu_settings.bank_1.image_size;
+    uint32_t const image_size = s_dfu_settings.bank_1.image_size;
 
-    uint32_t src_addr    = s_dfu_settings.progress.update_start_address;
-    uint32_t ret_val     = NRF_SUCCESS;
+    uint32_t src_addr = s_dfu_settings.progress.update_start_address;
+    uint32_t ret_val = NRF_SUCCESS;
     uint32_t target_addr = nrf_dfu_bank0_start_addr() + s_dfu_settings.write_offset;
     uint32_t length_left = (image_size - s_dfu_settings.write_offset);
     uint32_t crc;
@@ -179,20 +174,29 @@ static uint32_t app_activate(void)
         NRF_LOG_ERROR("Failed to copy firmware.");
         return ret_val;
     }
+    NRF_LOG_DEBUG("Cpy data from bank0 to RAM");
+    // cpy_flash_to_ram(0x34000, flash_ram_buf, BYTES_FOR_ONE_PAGE);
+
+    NRF_LOG_DEBUG("RAM data:");
+    for (int i = 0; i < 16; i++)
+    {
+        // NRF_LOG_DEBUG("0x%08x", flash_ram_buf[i]);
+    }
 
     // Check the CRC of the copied data. Enable if so.
     // 检查crc, 如果crc正确, 则把bank0的bank_code设置为NRF_DFU_BANK_VALID_APP
-    crc = crc32_compute((uint8_t*)nrf_dfu_bank0_start_addr(), image_size, NULL);
+    crc = crc32_compute((uint8_t *)nrf_dfu_bank0_start_addr(), image_size, NULL);
 
     // 如果bank0现在的crc和bank1的crc一样, 则把bank0的bank_code设置为NRF_DFU_BANK_VALID_APP
     if (crc == s_dfu_settings.bank_1.image_crc)
     {
         NRF_LOG_DEBUG("Setting app as valid");
         s_dfu_settings.bank_0.bank_code = NRF_DFU_BANK_VALID_APP;
-        s_dfu_settings.bank_0.image_crc = crc;
         s_dfu_settings.bank_0.image_size = image_size;
-        NRF_LOG_DEBUG("------------------------------");
-        
+        // s_dfu_settings.bank_0.image_crc = crc;
+
+        // 加入解密
+        decrypt_hex_from_flash(nrf_dfu_bank0_start_addr());
     }
     else
     {
@@ -205,7 +209,6 @@ static uint32_t app_activate(void)
     return ret_val;
 }
 
-
 /** @brief Function to execute the continuation of a SoftDevice update.
  *
  * @return NRF_SUCCESS if continuation was successful, NRF_ERROR_INTERNAL if new firmware does not
@@ -213,11 +216,11 @@ static uint32_t app_activate(void)
  */
 static uint32_t sd_activate(void)
 {
-    uint32_t   ret_val      = NRF_SUCCESS;
-    uint32_t   target_addr  = nrf_dfu_softdevice_start_address() + s_dfu_settings.write_offset;
-    uint32_t   src_addr     = s_dfu_settings.progress.update_start_address;
-    uint32_t   sd_size      = s_dfu_settings.sd_size;
-    uint32_t   length_left  = ALIGN_TO_PAGE(sd_size - s_dfu_settings.write_offset);
+    uint32_t ret_val = NRF_SUCCESS;
+    uint32_t target_addr = nrf_dfu_softdevice_start_address() + s_dfu_settings.write_offset;
+    uint32_t src_addr = s_dfu_settings.progress.update_start_address;
+    uint32_t sd_size = s_dfu_settings.sd_size;
+    uint32_t length_left = ALIGN_TO_PAGE(sd_size - s_dfu_settings.write_offset);
 
     NRF_LOG_DEBUG("Enter nrf_bootloader_dfu_sd_continue");
 
@@ -239,7 +242,7 @@ static uint32_t sd_activate(void)
     if (s_dfu_settings.write_offset == 0)
     {
         NRF_LOG_DEBUG("Updating SD. Old SD ver: %d, New ver: %d",
-            SD_VERSION_GET(MBR_SIZE) / 1000000, SD_VERSION_GET(src_addr) / 1000000);
+                      SD_VERSION_GET(MBR_SIZE) / 1000000, SD_VERSION_GET(src_addr) / 1000000);
     }
 
     ret_val = image_copy(target_addr, src_addr, length_left, NRF_BL_FW_COPY_PROGRESS_STORE_STEP);
@@ -253,7 +256,6 @@ static uint32_t sd_activate(void)
 
     return ret_val;
 }
-
 
 /** @brief Function to continue bootloader update.
  *
@@ -272,15 +274,15 @@ static uint32_t sd_activate(void)
  */
 static uint32_t bl_activate(void)
 {
-    uint32_t         ret_val  = NRF_ERROR_INVALID_DATA;
-    nrf_dfu_bank_t * p_bank   = &s_dfu_settings.bank_1;
-    uint32_t         len      = p_bank->image_size;
-    uint32_t         src_addr = s_dfu_settings.progress.update_start_address;
+    uint32_t ret_val = NRF_ERROR_INVALID_DATA;
+    nrf_dfu_bank_t *p_bank = &s_dfu_settings.bank_1;
+    uint32_t len = p_bank->image_size;
+    uint32_t src_addr = s_dfu_settings.progress.update_start_address;
 
     if (p_bank->bank_code == NRF_DFU_BANK_VALID_SD_BL)
     {
         src_addr += s_dfu_settings.sd_size;
-        len      -= s_dfu_settings.sd_size;
+        len -= s_dfu_settings.sd_size;
     }
     else if (src_addr == 0)
     {
@@ -304,7 +306,7 @@ static uint32_t bl_activate(void)
     if ((ret_val != NRF_SUCCESS) &&
         (memcmp((void *)BOOTLOADER_START_ADDR, (void *)src_addr, len) == 0))
     {
-        ret_val =  NRF_SUCCESS;
+        ret_val = NRF_SUCCESS;
     }
 
     // If the bootloader is the same as the banked version, the copy is finished
@@ -322,7 +324,7 @@ static uint32_t bl_activate(void)
         // Bootloader is different than the banked version. Continue copy
         // Note that if the SD and BL was combined, then the split point between them is in s_dfu_settings.sd_size
         // On success this function won't return.
-        ret_val = nrf_dfu_mbr_copy_bl((uint32_t*)src_addr, len);
+        ret_val = nrf_dfu_mbr_copy_bl((uint32_t *)src_addr, len);
         if (ret_val != NRF_SUCCESS)
         {
             NRF_LOG_ERROR("Request to copy BL failed");
@@ -331,7 +333,6 @@ static uint32_t bl_activate(void)
 
     return ret_val;
 }
-
 
 /** @brief Function to continue combined bootloader and SoftDevice update.
  *
@@ -369,48 +370,46 @@ static uint32_t sd_bl_activate()
     return ret_val;
 }
 
-
-static void flash_write_callback(void * p_context)
+static void flash_write_callback(void *p_context)
 {
     UNUSED_PARAMETER(p_context);
     m_flash_write_done = true;
 }
 
-
 nrf_bootloader_fw_activation_result_t nrf_bootloader_fw_activate(void)
 {
     nrf_bootloader_fw_activation_result_t result;
-    uint32_t                              ret_val   = NRF_SUCCESS;
-    nrf_dfu_bank_t                      * p_bank    = &s_dfu_settings.bank_1;
-    bool                                  sd_update = false;
+    uint32_t ret_val = NRF_SUCCESS;
+    nrf_dfu_bank_t *p_bank = &s_dfu_settings.bank_1;
+    bool sd_update = false;
 
     NRF_LOG_DEBUG("Enter nrf_bootloader_fw_activate");
-    
+
     // 发现dfu_settings里面的bank_1里面的bank_code是NRF_DFU_BANK_VALID_APP
     switch (p_bank->bank_code)
     {
-       case NRF_DFU_BANK_VALID_APP:
-            NRF_LOG_DEBUG("Valid App");
-            ret_val = app_activate();
-            break;
-       case NRF_DFU_BANK_VALID_SD:
-            NRF_LOG_DEBUG("Valid SD");
-            ret_val = sd_activate();
-            sd_update = true;
-            break;
-        case NRF_DFU_BANK_VALID_BL:
-            NRF_LOG_DEBUG("Valid BL");
-            ret_val = bl_activate();
-            break;
-        case NRF_DFU_BANK_VALID_SD_BL:
-            NRF_LOG_DEBUG("Valid SD + BL");
-            ret_val = sd_bl_activate();
-            sd_update = true;
-            break;
-        case NRF_DFU_BANK_INVALID:
-        default:
-            NRF_LOG_INFO("No firmware to activate.");
-            return ACTIVATION_NONE;
+    case NRF_DFU_BANK_VALID_APP:
+        NRF_LOG_DEBUG("Valid App");
+        ret_val = app_activate();
+        break;
+    case NRF_DFU_BANK_VALID_SD:
+        NRF_LOG_DEBUG("Valid SD");
+        ret_val = sd_activate();
+        sd_update = true;
+        break;
+    case NRF_DFU_BANK_VALID_BL:
+        NRF_LOG_DEBUG("Valid BL");
+        ret_val = bl_activate();
+        break;
+    case NRF_DFU_BANK_VALID_SD_BL:
+        NRF_LOG_DEBUG("Valid SD + BL");
+        ret_val = sd_bl_activate();
+        sd_update = true;
+        break;
+    case NRF_DFU_BANK_INVALID:
+    default:
+        NRF_LOG_INFO("No firmware to activate.");
+        return ACTIVATION_NONE;
     }
 
     if (ret_val != NRF_SUCCESS)
@@ -422,6 +421,12 @@ nrf_bootloader_fw_activation_result_t nrf_bootloader_fw_activate(void)
     // Invalidate bank, marking completion.
     nrf_dfu_bank_invalidate(p_bank);
 
+    // 重新计算crc
+    s_dfu_settings.bank_0.image_crc = 0x12345678;
+
+    // 重新结算CRC结果
+    // s_dfu_settings.bank_0.image_crc = crc32_compute((uint8_t *)nrf_dfu_bank0_start_addr(), s_dfu_settings.bank_0.image_size, NULL);
+
     m_flash_write_done = false;
     ret_val = nrf_dfu_settings_write_and_backup(flash_write_callback);
     ASSERT(m_flash_write_done); /* At this point flash module is performing blocking operation. It is expected that operation is already performed. */
@@ -431,7 +436,7 @@ nrf_bootloader_fw_activation_result_t nrf_bootloader_fw_activate(void)
         result = ACTIVATION_SUCCESS;
         if (sd_update && (s_dfu_settings.bank_0.bank_code == NRF_DFU_BANK_VALID_APP))
         {
-            //If SD was updated and application is valid we want to stay in DFU to receive application.
+            // If SD was updated and application is valid we want to stay in DFU to receive application.
             NRF_LOG_DEBUG("A SoftDevice has just been activated. It's likely that an application will come immediately");
             result = ACTIVATION_SUCCESS_EXPECT_ADDITIONAL_UPDATE;
         }
@@ -444,4 +449,3 @@ nrf_bootloader_fw_activation_result_t nrf_bootloader_fw_activate(void)
 
     return result;
 }
-

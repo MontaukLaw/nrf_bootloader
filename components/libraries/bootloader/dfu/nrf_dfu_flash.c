@@ -51,11 +51,10 @@ NRF_LOG_MODULE_REGISTER();
 
 void dfu_fstorage_evt_handler(nrf_fstorage_evt_t *p_evt);
 
-NRF_FSTORAGE_DEF(nrf_fstorage_t m_fs) =
-    {
-        .evt_handler = dfu_fstorage_evt_handler,
-        .start_addr = MBR_SIZE,
-        .end_addr = BOOTLOADER_SETTINGS_ADDRESS + BOOTLOADER_SETTINGS_PAGE_SIZE};
+NRF_FSTORAGE_DEF(nrf_fstorage_t m_fs) = {
+    .evt_handler = dfu_fstorage_evt_handler,
+    .start_addr = MBR_SIZE,
+    .end_addr = BOOTLOADER_SETTINGS_ADDRESS + BOOTLOADER_SETTINGS_PAGE_SIZE};
 
 static uint32_t m_flash_operations_pending;
 
@@ -132,11 +131,6 @@ ret_code_t nrf_dfu_flash_store(uint32_t dest,
 
     NRF_LOG_DEBUG("nrf_fstorage_write(addr=%p, src=%p, len=%d bytes), queue usage: %d",
                   dest, p_src, len, m_flash_operations_pending);
-
-    if (dest == 0x0007F000)
-    {
-        NRF_LOG_DEBUG("-------------");
-    }
 
     // lint -save -e611 (Suspicious cast)
     rc = nrf_fstorage_write(&m_fs, dest, p_src, len, (void *)callback);

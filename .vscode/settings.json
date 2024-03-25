@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "nrf_bootloader_info.h": "c"
+        "nrf_bootloader_info.h": "c",
+        "xutility": "c"
     }
 }

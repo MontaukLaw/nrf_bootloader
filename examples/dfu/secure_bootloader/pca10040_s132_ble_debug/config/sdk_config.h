@@ -1781,7 +1781,7 @@
 // <i> marker is injected informing about overflow.
 
 #ifndef NRF_LOG_ALLOW_OVERFLOW
-#define NRF_LOG_ALLOW_OVERFLOW 1
+#define NRF_LOG_ALLOW_OVERFLOW 0
 #endif
 
 // <o> NRF_LOG_BUFSIZE  - Size of the buffer for storing logs (in bytes).
@@ -1799,7 +1799,7 @@
 // <16384=> 16384 
 
 #ifndef NRF_LOG_BUFSIZE
-#define NRF_LOG_BUFSIZE 4096
+#define NRF_LOG_BUFSIZE 8192
 #endif
 
 // <q> NRF_LOG_CLI_CMDS  - Enable CLI commands for the module.
@@ -1879,7 +1879,7 @@
 // <e> NRF_LOG_USES_COLORS - If enabled then ANSI escape code for colors is prefixed to every string
 //==========================================================
 #ifndef NRF_LOG_USES_COLORS
-#define NRF_LOG_USES_COLORS 0
+#define NRF_LOG_USES_COLORS 1
 #endif
 // <o> NRF_LOG_COLOR_DEFAULT  - ANSI escape code prefix.
  
@@ -4697,7 +4697,7 @@
  
 
 #ifndef NRF_LOG_STR_FORMATTER_TIMESTAMP_FORMAT_ENABLED
-#define NRF_LOG_STR_FORMATTER_TIMESTAMP_FORMAT_ENABLED 1
+#define NRF_LOG_STR_FORMATTER_TIMESTAMP_FORMAT_ENABLED 0
 #endif
 
 // </h> 
@@ -4714,7 +4714,7 @@
 // <i> or this value is actually used. It depends on which one is bigger.
 
 #ifndef SEGGER_RTT_CONFIG_BUFFER_SIZE_UP
-#define SEGGER_RTT_CONFIG_BUFFER_SIZE_UP 4096
+#define SEGGER_RTT_CONFIG_BUFFER_SIZE_UP 8192
 #endif
 
 // <o> SEGGER_RTT_CONFIG_MAX_NUM_UP_BUFFERS - Maximum number of upstream buffers. 

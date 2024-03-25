@@ -51,6 +51,33 @@ void nrf_bootloader_app_start_final(uint32_t start_addr);
 
 void nrf_bootloader_app_start(void)
 {
+    // uint32_t ret_val = NRF_SUCCESS;
+    volatile uint32_t *flash_data_ptr = (uint32_t *)0x26000;
+    // 检查0x26000的数据是否等于0x12345678
+    if (*flash_data_ptr == 0xC4FC6C92)
+    {
+        // NRF_LOG_DEBUG("Rewrite flash");
+
+        // decrypt_hex_from_flash(nrf_dfu_bank0_start_addr());
+        // uint32_t crc = crc32_compute((uint8_t *)nrf_dfu_bank0_start_addr(), 90532, NULL);
+        // NRF_LOG_DEBUG("crc: 0x%x", crc);
+
+        // ret_val = nrf_dfu_flash_erase(nrf_dfu_bank0_start_addr(), 1, NULL);
+        // if (ret_val != NRF_SUCCESS)
+        // {
+        //     NRF_LOG_DEBUG("Erase flash failed");
+        //     return ret_val;
+        // }
+
+        // NRF_LOG_DEBUG("Copying 0x%x to 0x%x, size: 0x%x", src_addr, dst_addr, bytes);
+
+        // ret_val = nrf_dfu_flash_store(dst_addr, (uint32_t *)src_addr, ALIGN_NUM(sizeof(uint32_t), bytes), NULL);
+        // if (ret_val != NRF_SUCCESS)
+        // {
+        //     return ret_val;
+        // }
+    }
+
     uint32_t start_addr = MBR_SIZE; // Always boot from end of MBR. If a SoftDevice is present, it will boot the app.
     NRF_LOG_DEBUG("Running nrf_bootloader_app_start with address: 0x%08x", start_addr);
     uint32_t err_code;
@@ -71,6 +98,7 @@ void nrf_bootloader_app_start(void)
     {
         NRF_LOG_ERROR("Failed running nrf_dfu_mbr_irq_forward_address_set()");
     }
+
     NRF_LOG_DEBUG("app_start from here");
     NRF_LOG_FLUSH();
     nrf_bootloader_app_start_final(start_addr);
