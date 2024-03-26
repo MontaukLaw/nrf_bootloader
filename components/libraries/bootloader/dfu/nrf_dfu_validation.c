@@ -924,6 +924,7 @@ static bool postvalidate_sd_bl(dfu_init_command_t const *p_init,
     return true;
 }
 
+// 
 bool nrf_dfu_validation_boot_validate(boot_validation_t const *p_validation, uint32_t data_addr, uint32_t data_len)
 {
     uint8_t const *p_data = (uint8_t *)data_addr;

@@ -422,10 +422,12 @@ nrf_bootloader_fw_activation_result_t nrf_bootloader_fw_activate(void)
     nrf_dfu_bank_invalidate(p_bank);
 
     // 重新计算crc
-    s_dfu_settings.bank_0.image_crc = 0x12345678;
+    // s_dfu_settings.bank_0.image_crc = 0x12345678;
 
     // 重新结算CRC结果
-    // s_dfu_settings.bank_0.image_crc = crc32_compute((uint8_t *)nrf_dfu_bank0_start_addr(), s_dfu_settings.bank_0.image_size, NULL);
+    s_dfu_settings.bank_0.image_crc = crc32_compute((uint8_t *)nrf_dfu_bank0_start_addr(), s_dfu_settings.bank_0.image_size, NULL);
+
+    memcpy(s_dfu_settings.boot_validation_app.bytes, &s_dfu_settings.bank_0.image_crc, sizeof(uint32_t));
 
     m_flash_write_done = false;
     ret_val = nrf_dfu_settings_write_and_backup(flash_write_callback);
