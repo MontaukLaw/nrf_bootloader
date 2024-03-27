@@ -25,12 +25,18 @@ uint8_t flash_ram_buf[BYTES_FOR_ONE_PAGE];
 extern uint8_t start_write_hex;
 static uint32_t key_buffer[4] = {0, 0, 0, 0};
 // 密钥是128bit的，4个uint32
+// 初始密钥跟drift
 static uint32_t init_key[4] = {0x01234567, 0x89ABCDEF, 0xFEDCBA98, 0x76543210};
 static uint32_t drift[4] = {0x12341234, 0x567890ab, 0xcdef1122, 0x33445566};
-// static uint32_t decrypted_buf[2];
+
 static uint16_t package_counter = 0;
+// 解密后的数据缓存, 最大一个为1 page大小4096字节
 static uint8_t decrpyted_data[MAX_ENCRYPTED_LEN_U8];
 
+// 使用tea加密
+// v为2个uint32_t数据类型的数组, k为4个uint32_t数据类型的数组
+// 结果decrypted_buf为uint8_t数据类型的指针(也就是2个uint32_t), 用于存放解密后的数据
+// 0xC6EF3720跟0x9e3779b9是固定值, 不能修改
 static void tea_decrypt(uint32_t *v, uint32_t *k, uint8_t *decrypted_buf)
 {
     uint32_t v0 = v[0], v1 = v[1], sum = 0xC6EF3720, i;  /* set up */
@@ -42,13 +48,6 @@ static void tea_decrypt(uint32_t *v, uint32_t *k, uint8_t *decrypted_buf)
         v0 -= ((v1 << 4) + k0) ^ (v1 + sum) ^ ((v1 >> 5) + k1);
         sum -= delta;
     } /* end cycle */
-
-    // decrypted_buf[0] = v0;
-    // decrypted_buf[4] = v1;
-    // memcpy(&decrypted_buf[0], &v0, 4);
-    // memcpy(&decrypted_buf[4], &v1, 4);
-    // decrypted_buf[0] = v0;
-    // decrypted_buf[1] = v1;
 
     // 做个大小端变换
     decrypted_buf[0] = (v0 >> 24) & 0xff;
@@ -62,7 +61,7 @@ static void tea_decrypt(uint32_t *v, uint32_t *k, uint8_t *decrypted_buf)
     decrypted_buf[7] = v1 & 0xff;
 }
 
-// 更新密钥,方法是将密钥的每个字节加上一个固定的值
+// 更新密钥,方法是将密钥的每个字节加上一个drift值, 然后加上上一轮的密文
 static void update_key(uint32_t v0, uint32_t v1)
 {
     key_buffer[0] = key_buffer[0] + drift[0] + v0;
@@ -71,7 +70,9 @@ static void update_key(uint32_t v0, uint32_t v1)
     key_buffer[3] = key_buffer[3] + drift[3] + v1;
 }
 
-// 大小端数据缓存
+// 解密数据
+// p_data为加密数据, decrypted为解密后的数据
+// if_print为是否打印log
 static void decrypt_hex(const uint8_t *p_data, uint8_t *decrypted, bool if_print)
 {
     uint16_t i;
@@ -80,32 +81,37 @@ static void decrypt_hex(const uint8_t *p_data, uint8_t *decrypted, bool if_print
 
     uint16_t decrypte_idx = 0;
 
+    // 大小端数据缓存
     for (i = 0; i < MAX_ENCRYPTED_LEN_U8; i = i + 4)
     {
         data_buf[i / 4] = (p_data[i] << 24) | (p_data[i + 1] << 16) | (p_data[i + 2] << 8) | p_data[i + 3];
     }
+
     NRF_LOG_DEBUG("Before decrypt:");
 
-    // 仅仅打印前面6个字节
-    for (i = 0; i < 4; i++)
+    if (if_print)
     {
-        if (if_print)
+        // 仅仅打印前面6个字节
+        for (i = 0; i < 6; i++)
         {
             NRF_LOG_DEBUG("0x%08x", data_buf[i]);
         }
     }
 
-    // 每次加密8个字节
+    // 每次加密8个字节, 一共加密 4096/8 = 512次
     for (i = 0; i < MAX_DECRYPTED_LEN_U32; i = i + 2)
     {
+        // TEA解密
         tea_decrypt(&data_buf[i], key_buffer, &decrypted[decrypte_idx]);
         // NRF_LOG_DEBUG("After decrypt: %08x %08x", decrypted[i * 4], decrypted[i * 4 + 4]);
+        // 更新密钥
         update_key(data_buf[i], data_buf[i + 1]);
-
+        // 解密指针寻址
         decrypte_idx = decrypte_idx + 8;
         // NRF_LOG_DEBUG("After update key: %08x %08x %08x %08x", key_buffer[0], key_buffer[1], key_buffer[2], key_buffer[3]);
     }
 
+    // 按需打印解密后的数据
     if (if_print)
     {
 
@@ -120,6 +126,7 @@ static void decrypt_hex(const uint8_t *p_data, uint8_t *decrypted, bool if_print
     // NRF_LOG_HEXDUMP_DEBUG(&decrypted[80], 80);
     // NRF_LOG_HEXDUMP_DEBUG(&decrypted[160], 80);
 }
+
 #if 0
 static void decrypt_hex__(const uint8_t *p_data, uint8_t *decrypted)
 {
@@ -163,6 +170,8 @@ static void decrypt_ram_data_test(void)
     }
 }
 
+// 对flash数进行解密
+// p_data为flash数据地址, image_size为flash数据大小, 用于计算page数
 void decrypt_hex_from_flash(const uint8_t *p_data, uint32_t const image_size)
 {
     // 第0步, 计算一下一共要解密多少个page
@@ -174,7 +183,7 @@ void decrypt_hex_from_flash(const uint8_t *p_data, uint32_t const image_size)
     // 初始化密钥
     memcpy(key_buffer, init_key, 4 * sizeof(uint32_t));
     uint32_t flash_address = 0;
-    // for (i = 0; i < decrypt_page_count; i++)
+    // 将所有page都进行解密
     for (i = 0; i < decrypt_page_count; i++)
     {
         NRF_LOG_FLUSH();
@@ -191,8 +200,9 @@ void decrypt_hex_from_flash(const uint8_t *p_data, uint32_t const image_size)
         // NRF_LOG_DEBUG("flash encypted data: 300+16");
         // NRF_LOG_HEXDUMP_DEBUG(&flash_ram_buf[300], 16);
 
-        // 第二步, 解密前面的
+        // 第二步, 解密这个page的数据,解密数据缓存在decrpyted_data
         // decrypt_ram_data_test();
+        // 前面2个page的数据需要打印log
         if (i < 3)
         {
             decrypt_hex(flash_ram_buf, decrpyted_data, true);
@@ -210,7 +220,7 @@ void decrypt_hex_from_flash(const uint8_t *p_data, uint32_t const image_size)
         // 打印一下flash_ram_buf
         // NRF_LOG_HEXDUMP_DEBUG(decrpyted_data, 16);
 
-        // 第四步, 删除page的数据
+        // 第四步, 删除page的原来的数据
         nrf_dfu_flash_erase(nrf_dfu_bank0_start_addr() + i * BYTES_FOR_ONE_PAGE, 1, NULL);
 
         // NRF_LOG_DEBUG("flash_ram_buf 300+16");
@@ -219,8 +229,6 @@ void decrypt_hex_from_flash(const uint8_t *p_data, uint32_t const image_size)
         // 第五步, 把解密后的数据写回flash
         nrf_dfu_flash_store(nrf_dfu_bank0_start_addr() + i * BYTES_FOR_ONE_PAGE, (uint32_t *)decrpyted_data, BYTES_FOR_ONE_PAGE, NULL);
     }
-
-    // cpy_flash_to_ram((uint32_t)p_data, flash_ram_buf, BYTES_FOR_ONE_PAGE);
 }
 
 void cpy_flash_to_ram(uint32_t src_addr, uint32_t *dst_addr, uint32_t size)
