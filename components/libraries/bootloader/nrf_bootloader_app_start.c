@@ -56,6 +56,8 @@ void nrf_bootloader_app_start(void)
     // 检查0x26000的数据是否等于0x12345678
     if (*flash_data_ptr == 0xC4FC6C92)
     {
+        // NRF_LOG_DEBUG("Start decrypting");
+        // decrypt_hex_from_flash(nrf_dfu_bank0_start_addr(), 90532);
         // NRF_LOG_DEBUG("Rewrite flash");
 
         // decrypt_hex_from_flash(nrf_dfu_bank0_start_addr());

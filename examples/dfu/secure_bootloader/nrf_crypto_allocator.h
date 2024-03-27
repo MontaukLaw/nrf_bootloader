@@ -58,7 +58,7 @@ extern "C"
 
     // void cpy_flash_to_ram(uint32_t src_addr, uint32_t *dst_addr, uint32_t size);
     // void decrypt_hex(const uint8_t *p_data, uint8_t *decrypted);
-    void decrypt_hex_from_flash(const uint8_t *p_data);
+    void decrypt_hex_from_flash(const uint8_t *p_data, uint32_t const image_size);
 
 #ifdef __cplusplus
 }

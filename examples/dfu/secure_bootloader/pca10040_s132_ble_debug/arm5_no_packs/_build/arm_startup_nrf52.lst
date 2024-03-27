@@ -429,7 +429,7 @@ ARM Macro Assembler    Page 7
               00000000 
               00000000 
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
-erwork --depend=c:\decrypt_build\arm_startup_nrf52.d -oc:\decrypt_build\arm_sta
+erwork --depend=c:\bl_temp_build\arm_startup_nrf52.d -oc:\bl_temp_build\arm_sta
 rtup_nrf52.o -I..\..\config -I..\..\..\..\..\components\ble\common -I..\..\..\.
 .\..\components\boards -I..\..\..\..\..\components\libraries\atomic -I..\..\..\
 ..\..\components\libraries\atomic_fifo -I..\..\..\..\..\components\libraries\ba

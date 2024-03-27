@@ -339,6 +339,7 @@ static ret_code_t settings_write(void *p_dst,
     ASSERT(p_dfu_settings_buffer != NULL);
     memcpy(p_dfu_settings_buffer, p_src, sizeof(nrf_dfu_settings_t));
 
+#if 0
     // bank_0
     NRF_LOG_INFO("bank_0.image_size: %d", p_dfu_settings_buffer->bank_0.image_size);
     NRF_LOG_INFO("bank_0.image_crc: 0x%08x", p_dfu_settings_buffer->bank_0.image_crc);
@@ -349,7 +350,7 @@ static ret_code_t settings_write(void *p_dst,
     NRF_LOG_INFO("bank_1.image_crc: 0x%08x", p_dfu_settings_buffer->bank_1.image_crc);
     NRF_LOG_INFO("bank_1.image_type: %d", p_dfu_settings_buffer->bank_1.bank_code);
 
-#if 0
+
     // 打印p_dfu_settings_buffer
     NRF_LOG_INFO("p_dfu_settings_buffer: ");
     NRF_LOG_INFO("crc: 0x%08x", p_dfu_settings_buffer->crc);

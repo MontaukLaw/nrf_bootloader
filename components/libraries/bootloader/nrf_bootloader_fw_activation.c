@@ -174,14 +174,6 @@ static uint32_t app_activate(void)
         NRF_LOG_ERROR("Failed to copy firmware.");
         return ret_val;
     }
-    NRF_LOG_DEBUG("Cpy data from bank0 to RAM");
-    // cpy_flash_to_ram(0x34000, flash_ram_buf, BYTES_FOR_ONE_PAGE);
-
-    NRF_LOG_DEBUG("RAM data:");
-    for (int i = 0; i < 16; i++)
-    {
-        // NRF_LOG_DEBUG("0x%08x", flash_ram_buf[i]);
-    }
 
     // Check the CRC of the copied data. Enable if so.
     // 检查crc, 如果crc正确, 则把bank0的bank_code设置为NRF_DFU_BANK_VALID_APP
@@ -193,10 +185,11 @@ static uint32_t app_activate(void)
         NRF_LOG_DEBUG("Setting app as valid");
         s_dfu_settings.bank_0.bank_code = NRF_DFU_BANK_VALID_APP;
         s_dfu_settings.bank_0.image_size = image_size;
+        // 这里不需要设置crc, 解密后再做
         // s_dfu_settings.bank_0.image_crc = crc;
 
         // 加入解密
-        decrypt_hex_from_flash(nrf_dfu_bank0_start_addr());
+        decrypt_hex_from_flash(nrf_dfu_bank0_start_addr(), image_size);
     }
     else
     {
